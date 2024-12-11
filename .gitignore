@@ -1,0 +1,7 @@
+myenv/
+.env
+*.json
+
+*.txt
+# 但保留 requirements.txt
+!requirements.txt
