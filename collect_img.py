@@ -78,19 +78,19 @@ except FileNotFoundError:
 # 去除已经完成的 img
 new_img_objects = [img for img in img_objects if img.to_json() not in done_list]
 
-# 更新已经完成的img
-with open("done_img_list.json", "w", encoding="utf-8") as f:
-    json.dump(
-        done_list + [img.to_json() for img in new_img_objects],
-        f,
-        ensure_ascii=False,
-        indent=2,
-    )
-
 # write to json, beautify it
 with open("img_list.json", "w", encoding="utf-8") as f:
     json.dump(
         [img.to_json() for img in new_img_objects], f, ensure_ascii=False, indent=2
     )
+
+# update done_href_list.txt
+with open("done_href_list.txt", "a") as f:
+    for href in href_list:
+        f.write(f"{href}\n")
+
+# clear href_list.txt
+with open("href_list.txt", "w") as f:
+    pass
 
 driver.quit()

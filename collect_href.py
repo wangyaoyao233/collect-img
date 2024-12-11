@@ -76,12 +76,6 @@ except FileNotFoundError:
 # 去除已经完成的href
 new_href_list = list(set(href_list) - set(done_list))
 
-if new_href_list:
-    # 更新已经完成的href
-    with open("done_href_list.txt", "a") as f:
-        for href in new_href_list:
-            f.write(f"{href}\n")
-
 # store the href_list to a file
 with open("href_list.txt", "w") as f:
     for href in new_href_list:

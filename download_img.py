@@ -55,3 +55,13 @@ async def download_images_from_json(json_file, save_dir):
 if __name__ == "__main__":
     json_file = "img_list.json"  # JSON 文件路径
     asyncio.run(download_images_from_json(json_file, FOLDER_PATH))
+
+    # update done_img_list.json
+    done_list = load_json("done_img_list.json")
+    new_done_list = done_list + load_json(json_file)
+    with open("done_img_list.json", "w", encoding="utf-8") as f:
+        json.dump(new_done_list, f, ensure_ascii=False, indent=2)
+
+    # clear img_list.json
+    with open(json_file, "w", encoding="utf-8") as f:
+        f.write("[]")

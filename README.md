@@ -33,4 +33,4 @@ pip install selenium beautifulsoup4 aiohttp requests
 1. python collect_href.py
 2. python collect_img.py
 3. python download_img.py
-4. python upload_to_pg.py
+4. python upload_to_tg.py

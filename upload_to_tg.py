@@ -29,6 +29,8 @@ def send_file_to_channel(bot_token, channel_id, file_path):
 # 主函数：上传文件夹中的所有文件
 def upload_folder_files(bot_token, channel_id, folder_path, delay=1):
     files = get_all_files(folder_path)
+    files = [file for file in files if "20241210" in file]
+    print(f"Total files: {len(files)}")
     with open("uploaded.txt", "a") as log:  # 打开日志文件，保持文件流
         for file_path in files:
             print(f"Uploading {file_path}...")
