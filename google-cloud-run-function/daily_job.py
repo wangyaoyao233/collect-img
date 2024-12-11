@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webdriver import WebDriver
 from bs4 import BeautifulSoup
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import requests
 import json
 import mimetypes
@@ -39,7 +39,7 @@ class ImgObject:
         return {"src": self.src, "name": f"{self.date}_{self.file}_{self.id}"}
 
 
-def get_hrefs(today: date):
+def get_hrefs(job_date: date):
     base_url = "https://mitsui-shopping-park.com"
     driver = webdriver.Chrome(options=chrome_options)
     driver.get("https://mitsui-shopping-park.com/ec/shop/OPAQUECLIP/staff/12550")
@@ -60,7 +60,7 @@ def get_hrefs(today: date):
             continue
         date_str = date_node.text
         parsed_date = datetime.strptime(date_str, "%Y/%m/%d").date()
-        if parsed_date != today:
+        if parsed_date != job_date:
             continue
 
         # 找到 <a> 标签
@@ -150,10 +150,11 @@ def main(cloud_event):
         print("Invalid Pub/Sub message format.")
         return
     today = date.today()
+    job_date = today - timedelta(days=3)
     if "date" in data_dict:
-        today = datetime.strptime(data_dict["date"], "%Y%m%d").date()
+        job_date = datetime.strptime(data_dict["date"], "%Y%m%d").date()
 
-    href_list = get_hrefs(today)
+    href_list = get_hrefs(job_date)
     img_objects = get_imgs(href_list)
     download_upload_img(img_objects)
     print("Function executed successfully.")
