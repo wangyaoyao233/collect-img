@@ -13,8 +13,8 @@ import json
 import mimetypes
 import os
 
-BOT_TOKEN = os.getenv("VARIABLE_NAME")
-CHANNEL_ID = os.getenv("VARIABLE_NAME")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 # 设置无头模式
 chrome_options = Options()
