@@ -134,6 +134,7 @@ def download_upload_img(img_objects):
         }
         data = {"chat_id": CHANNEL_ID}
         response = requests.post(url, data=data, files=files)
+        print(response.json())
         time.sleep(1)
 
 
