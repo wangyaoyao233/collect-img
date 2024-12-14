@@ -7,10 +7,6 @@ import json
 # 设置无头模式
 chrome_options = Options()
 chrome_options.add_argument("--headless")  # 无头模式
-chrome_options.add_argument("--disable-gpu")  # 禁用 GPU（可选，提升兼容性）
-chrome_options.add_argument("--window-size=1920,1080")  # 设置窗口大小
-chrome_options.add_argument("--no-sandbox")  # 避免沙盒模式问题（服务器环境建议）
-chrome_options.add_argument("--disable-dev-shm-usage")  # 避免内存不足的问题
 
 driver = webdriver.Chrome(options=chrome_options)
 
