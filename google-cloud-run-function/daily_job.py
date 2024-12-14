@@ -10,8 +10,8 @@ import time
 from datetime import date, datetime, timedelta
 import requests
 import json
-import mimetypes
 import os
+from os.path import splitext
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
@@ -19,13 +19,9 @@ CHANNEL_ID = os.getenv("CHANNEL_ID")
 # 设置无头模式
 chrome_options = Options()
 chrome_options.add_argument("--headless")  # 无头模式
-chrome_options.add_argument("--disable-gpu")  # 禁用 GPU（可选，提升兼容性）
-chrome_options.add_argument("--window-size=1920,1080")  # 设置窗口大小
-chrome_options.add_argument("--no-sandbox")  # 避免沙盒模式问题（服务器环境建议）
-chrome_options.add_argument("--disable-dev-shm-usage")  # 避免内存不足的问题
-chrome_options.add_argument(
-    "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
-)
+
+driver = webdriver.Chrome(options=chrome_options)
+driver.implicitly_wait(3)
 
 
 class ImgObject:
@@ -36,14 +32,12 @@ class ImgObject:
         self.id = id
 
     def to_json(self):
-        return {"src": self.src, "name": f"{self.date}_{self.file}_{self.id}"}
+        return {"src": self.src, "name": f"{self.date}_{self.file}_{self.id}.jpg"}
 
 
 def get_hrefs(job_date: date):
     base_url = "https://mitsui-shopping-park.com"
-    driver = webdriver.Chrome(options=chrome_options)
     driver.get("https://mitsui-shopping-park.com/ec/shop/OPAQUECLIP/staff/12550")
-    driver.implicitly_wait(0.5)
 
     html_content = driver.page_source
     soup = BeautifulSoup(html_content, "html.parser")
@@ -69,14 +63,13 @@ def get_hrefs(job_date: date):
             href_list.append(base_url + link["href"])
 
     # 输出提取的 href 列表
-    print(f"href_list: {len(href_list)}")
-    driver.quit()
+    print(f"href_list: {href_list}")
     return href_list
 
 
-def get_imgs_from_url(driver: WebDriver, url: str):
+def get_imgs_from_url(url: str):
+    print(f"Getting imgs from {url}")
     driver.get(url)
-    driver.implicitly_wait(0.5)
 
     html_content = driver.page_source
     soup = BeautifulSoup(html_content, "html.parser")
@@ -102,11 +95,10 @@ def get_imgs_from_url(driver: WebDriver, url: str):
 
 
 def get_imgs(href_list):
-    driver = webdriver.Chrome(options=chrome_options)
     # img_objects is json like {"src": str, "name": str}
     img_objects = []
     for href in href_list:
-        img_objects.extend(get_imgs_from_url(driver, href))
+        img_objects.extend(get_imgs_from_url(href))
 
     driver.quit()
     # 转换为 JSON 格式
@@ -121,15 +113,13 @@ def download_upload_img(img_objects):
         response = requests.get(img["src"], stream=True)
         response.raise_for_status()
         image_data = BytesIO(response.content)
-
         # upload img
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
-        mime_type, _ = mimetypes.guess_type(img["name"])
         files = {
             "document": (
                 img["name"],
                 image_data,
-                mime_type or "application/octet-stream",
+                "image/jpeg",
             )
         }
         data = {"chat_id": CHANNEL_ID}
@@ -155,6 +145,7 @@ def main(cloud_event):
     if "date" in data_dict:
         job_date = datetime.strptime(data_dict["date"], "%Y%m%d").date()
 
+    print(f"Job date: {job_date.strftime('%Y%m%d')}")
     href_list = get_hrefs(job_date)
     img_objects = get_imgs(href_list)
     download_upload_img(img_objects)
