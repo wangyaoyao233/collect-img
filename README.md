@@ -5,6 +5,9 @@
 ## 环境命令 memo
 
 ```bash
+#创建虚拟环境
+python -m venv myenv
+
 #启动虚拟环境
 myenv\Scripts\activate
 
