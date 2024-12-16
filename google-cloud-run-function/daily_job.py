@@ -5,6 +5,9 @@ import re
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 from datetime import date, datetime, timedelta
@@ -19,9 +22,12 @@ CHANNEL_ID = os.getenv("CHANNEL_ID")
 # 设置无头模式
 chrome_options = Options()
 chrome_options.add_argument("--headless")  # 无头模式
+chrome_options.add_argument(
+    "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+)
 
 driver = webdriver.Chrome(options=chrome_options)
-driver.implicitly_wait(3)
+driver.implicitly_wait(5)
 
 
 class ImgObject:
@@ -71,15 +77,23 @@ def get_imgs_from_url(url: str):
     print(f"Getting imgs from {url}")
     driver.get(url)
 
+    # 等待页面中的 <p class="date"> 加载
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CLASS_NAME, "date"))
+    )
+
     html_content = driver.page_source
     soup = BeautifulSoup(html_content, "html.parser")
 
     # get date
-    date_text = soup.find("p", {"class": "date"}).text
+    date_text = soup.find("p", class_="date")
+    if not date_text:
+        raise ValueError("get_imgs_from_url: Date not found")
+    date_text = date_text.text
     # transform "YYYY/MM/DD" to "YYYYMMDD"
     date = datetime.strptime(date_text, "%Y/%m/%d").strftime("%Y%m%d")
 
-    target_div = soup.find("div", {"class": "swiper-wrapper"})
+    target_div = soup.find("div", class_="swiper-wrapper")
     imgs = target_div.find_all("img")
 
     src_list = []
