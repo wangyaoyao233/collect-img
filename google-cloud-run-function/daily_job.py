@@ -155,7 +155,7 @@ def main(cloud_event):
         print("Invalid Pub/Sub message format.")
         return
     today = date.today()
-    job_date = today - timedelta(days=3)
+    job_date = today - timedelta(days=7)
     if "date" in data_dict:
         job_date = datetime.strptime(data_dict["date"], "%Y%m%d").date()
 
