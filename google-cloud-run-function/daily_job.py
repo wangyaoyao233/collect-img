@@ -175,8 +175,8 @@ def main(cloud_event):
         with WebDriverContext(options=chrome_options) as driver:
             href_list = get_hrefs(driver, job_date)
             img_objects = get_imgs(driver, href_list)
-            download_upload_img(img_objects)
 
+        download_upload_img(img_objects)
         print("Function executed successfully.")
 
     except Exception as e:
