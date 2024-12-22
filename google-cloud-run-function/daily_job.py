@@ -14,7 +14,6 @@ from datetime import date, datetime, timedelta
 import requests
 import json
 import os
-from os.path import splitext
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
@@ -26,8 +25,21 @@ chrome_options.add_argument(
     "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 )
 
-driver = webdriver.Chrome(options=chrome_options)
-driver.implicitly_wait(5)
+
+# 创建上下文管理器
+class WebDriverContext:
+    def __init__(self, options=None):
+        self.options = options
+        self.driver = None
+
+    def __enter__(self):
+        self.driver = webdriver.Chrome(options=self.options)
+        self.driver.implicitly_wait(5)
+        return self.driver
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.driver:
+            self.driver.quit()
 
 
 class ImgObject:
@@ -41,7 +53,7 @@ class ImgObject:
         return {"src": self.src, "name": f"{self.date}_{self.file}_{self.id}.jpg"}
 
 
-def get_hrefs(job_date: date):
+def get_hrefs(driver: WebDriver, job_date: date):
     base_url = "https://mitsui-shopping-park.com"
     driver.get("https://mitsui-shopping-park.com/ec/shop/OPAQUECLIP/staff/12550")
 
@@ -73,7 +85,7 @@ def get_hrefs(job_date: date):
     return href_list
 
 
-def get_imgs_from_url(url: str):
+def get_imgs_from_url(driver: WebDriver, url: str):
     print(f"Getting imgs from {url}")
     driver.get(url)
 
@@ -108,13 +120,12 @@ def get_imgs_from_url(url: str):
     return img_objects
 
 
-def get_imgs(href_list):
+def get_imgs(driver: WebDriver, href_list):
     # img_objects is json like {"src": str, "name": str}
     img_objects = []
     for href in href_list:
-        img_objects.extend(get_imgs_from_url(href))
+        img_objects.extend(get_imgs_from_url(driver, href))
 
-    driver.quit()
     # 转换为 JSON 格式
     return [img.to_json() for img in img_objects]
 
@@ -145,22 +156,28 @@ def download_upload_img(img_objects):
 # Triggered from a message on a Cloud Pub/Sub topic.
 @functions_framework.cloud_event
 def main(cloud_event):
-    # Print out the data from Pub/Sub, to prove that it worked
-    print(base64.b64decode(cloud_event.data["message"]["data"]))
-    if "message" in cloud_event.data and "data" in cloud_event.data["message"]:
-        encoded_data = cloud_event.data["message"]["data"]
-        decoded_data = base64.b64decode(encoded_data).decode("utf-8")
-        data_dict = json.loads(decoded_data)
-    else:
-        print("Invalid Pub/Sub message format.")
-        return
-    today = date.today()
-    job_date = today - timedelta(days=7)
-    if "date" in data_dict:
-        job_date = datetime.strptime(data_dict["date"], "%Y%m%d").date()
+    try:
+        # Print out the data from Pub/Sub, to prove that it worked
+        print(base64.b64decode(cloud_event.data["message"]["data"]))
+        if "message" in cloud_event.data and "data" in cloud_event.data["message"]:
+            encoded_data = cloud_event.data["message"]["data"]
+            decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+            data_dict = json.loads(decoded_data)
+        else:
+            print("Invalid Pub/Sub message format.")
+            return
+        today = date.today()
+        job_date = today - timedelta(days=7)
+        if "date" in data_dict:
+            job_date = datetime.strptime(data_dict["date"], "%Y%m%d").date()
 
-    print(f"Job date: {job_date.strftime('%Y%m%d')}")
-    href_list = get_hrefs(job_date)
-    img_objects = get_imgs(href_list)
-    download_upload_img(img_objects)
-    print("Function executed successfully.")
+        print(f"Job date: {job_date.strftime('%Y%m%d')}")
+        with WebDriverContext(options=chrome_options) as driver:
+            href_list = get_hrefs(driver, job_date)
+            img_objects = get_imgs(driver, href_list)
+            download_upload_img(img_objects)
+
+        print("Function executed successfully.")
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
