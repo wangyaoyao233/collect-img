@@ -6,10 +6,10 @@
 
 ```bash
 #创建虚拟环境
-python -m venv myenv
+python -m venv venv
 
 #启动虚拟环境
-myenv\Scripts\activate
+venv\Scripts\activate
 
 #退出虚拟环境
 deactivate

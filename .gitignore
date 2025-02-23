@@ -1,7 +1,10 @@
-myenv/
+venv/
 .env
 *.json
-
 *.txt
 # 但保留 requirements.txt
 !requirements.txt
+
+# mac ._*
+**/._*
+**/.DS_Store
